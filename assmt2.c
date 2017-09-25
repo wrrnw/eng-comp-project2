@@ -3,6 +3,7 @@
  * Programming is fun!
  */
 
+/*?? Is such long variable name a bad habit? */
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -16,15 +17,16 @@ typedef struct {
   double soundLevel;
 } loudspeaker;
 
-typedef struct {
-  point pt;
-} observationPoint;
+
+
 
 
 /* function prototype */
 double calculateAggregateSoundLevel(loudspeaker loudspeakers[],
                                     int numLoudspeaker, point selectedPoint);
 void printStage1(int numLoudspeaker, loudspeaker loudspeakers[]);
+void printStage2(point observationPoints[], int numObservationPoints,
+                 loudspeaker loudspeakers[], int numLoudspeakers);
 double distanceBetween(point pt1, point pt2);
 double calculateSoundLevel(double L1, double r1, double r2);
 
@@ -46,7 +48,7 @@ int main(int argc, char* argv[]) {
   char lineSpecifier;
   int loudspeakerCount = 0, observationPointsCount = 0;
   loudspeaker loudspeakers[MAX_LOUDSPEAKER_NUMBER];
-  observationPoint observationPoints[MAX_OBSERVATION_POINTS_NUMBER];
+  point observationPoints[MAX_OBSERVATION_POINTS_NUMBER];
 
   while(scanf("%c", &lineSpecifier) != EOF) {
     if(lineSpecifier == 'S') {
@@ -56,47 +58,67 @@ int main(int argc, char* argv[]) {
       loudspeakerCount++;
     }
     else if(lineSpecifier == 'P') {
-      scanf("%lf %lf", &observationPoints[observationPointsCount].pt.x,
-                       &observationPoints[observationPointsCount].pt.y);
+      scanf("%lf %lf", &observationPoints[observationPointsCount].x,
+                       &observationPoints[observationPointsCount].y);
+      observationPointsCount++;
     }
   }
   /* aggregateSoundLevel = calculateAggregateSoundLevel(loudspeakers,
                                                      loudspeakerCount, origin); */
   printStage1(loudspeakerCount, loudspeakers);
+  printStage2(observationPoints, observationPointsCount,
+              loudspeakers, loudspeakerCount);
 
 
   return 0;
 }
 
-/*
-void printStage2(point observationPoints[], point loudspeakers[]) {
-  int i, j;
+
+void printStage2(point observationPoints[], int numObservationPoints,
+                 loudspeaker loudspeakers[], int numLoudspeakers) {
+  printf("Stage2\n");
+  printf("==========\n");
+  int i;
+  for(i = 0; i < numObservationPoints; i++) {
+    double aggSoundLevelAtCurrentPoint;
+    aggSoundLevelAtCurrentPoint = calculateAggregateSoundLevel(
+                                        loudspeakers,
+                                        numLoudspeakers,
+                                        observationPoints[i]);
+    printf("Sound level at (%0005.1f, %0005.1f): %5.2f dB\n",
+                                        observationPoints[i].x,
+                                        observationPoints[i].y,
+                                        aggSoundLevelAtCurrentPoint);
+  }
+  printf("\n");
+
 
 }
-*/
 
-void printStage1(int numLoudspeaker, loudspeaker loudspeakers[]) {
+
+void printStage1(int numLoudspeakers, loudspeaker loudspeakers[]) {
   double aggregateSoundLevelAtOrigin;
   aggregateSoundLevelAtOrigin = calculateAggregateSoundLevel(loudspeakers,
-                                                     numLoudspeaker, origin);
+                                                     numLoudspeakers, origin);
   printf("Stage1\n");
   printf("==========\n");
-  printf("Number of loudspeakers: %02d\n", numLoudspeaker);
-  printf("Sound level at (000.0, 000.0): %5.2f dB\n", aggregateSoundLevelAtOrigin);
+  printf("Number of loudspeakers: %02d\n", numLoudspeakers);
+  printf("Sound level at (%0005.1f, %0005.1f): %5.2f dB\n\n", origin.x, origin.y
+                                                , aggregateSoundLevelAtOrigin);
 }
 
 /* Calculate and return the aggregate soundLevel at selected point */
 double calculateAggregateSoundLevel(loudspeaker loudspeakers[],
-                                    int numLoudspeaker, point selectedPoint) {
+                                    int numLoudspeakers, point selectedPoint) {
 
   double partialSum = 0.0;
   int i;
   double distanceToSelectedPoint, soundLevelAtSelectedPoint;
 
-  for(i = 0; i < numLoudspeaker; i++) {
+  for(i = 0; i < numLoudspeakers; i++) {
     /* If Li = 0 then it should not be added into Equation 2, additionally,
        try not use '==' for double comparison */
-    if(abs(loudspeakers[i].soundLevel - 0.0) < 0.00000001) { /* Do we need to defne this magic number? how? */
+    if(abs(loudspeakers[i].soundLevel - 0.0) < 0.00000001) { /*?? Do we need to defne this magic number? how? */
       continue;
     }
 
