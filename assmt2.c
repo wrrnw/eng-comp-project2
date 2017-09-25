@@ -22,14 +22,19 @@ typedef struct {
 
 
 /* function prototype */
-double calculateAggregateSoundLevel(loudspeaker loudspeakers[], int numLoudspeaker);
-void printStage1(int numLoudspeaker, double Lsum);
+double calculateAggregateSoundLevel(loudspeaker loudspeakers[],
+                                    int numLoudspeaker, point selectedPoint);
+void printStage1(int numLoudspeaker, loudspeaker loudspeakers[]);
 double distanceBetween(point pt1, point pt2);
 double calculateSoundLevel(double L1, double r1, double r2);
 
 
 #define MAX_LOUDSPEAKER_NUMBER 98 /* From the specification, assume between 1
                                      and 99 loudspeakers will be specified */
+#define MAX_OBSERVATION_POINTS_NUMBER 98 /* From the specification, assume
+                                            between 1 and 99 observation points
+                                            will be specified */
+
 #define DEFAULT_DISTANCE 1  /* A distance of one metre(1m) from the source is
                                a frequently used default distance */
 
@@ -39,9 +44,9 @@ const point origin = {0.0 , 0.0}; /* The origin point */
 int main(int argc, char* argv[]) {
 
   char lineSpecifier;
-  int loudspeakerCount = 0;
-  double aggregateSoundLevel;
+  int loudspeakerCount = 0, observationPointsCount = 0;
   loudspeaker loudspeakers[MAX_LOUDSPEAKER_NUMBER];
+  observationPoint observationPoints[MAX_OBSERVATION_POINTS_NUMBER];
 
   while(scanf("%c", &lineSpecifier) != EOF) {
     if(lineSpecifier == 'S') {
@@ -50,23 +55,40 @@ int main(int argc, char* argv[]) {
                            &loudspeakers[loudspeakerCount].soundLevel);
       loudspeakerCount++;
     }
+    else if(lineSpecifier == 'P') {
+      scanf("%lf %lf", &observationPoints[observationPointsCount].pt.x,
+                       &observationPoints[observationPointsCount].pt.y);
+    }
   }
-  aggregateSoundLevel = calculateAggregateSoundLevel(loudspeakers, loudspeakerCount);
-  printStage1(loudspeakerCount, aggregateSoundLevel);
+  /* aggregateSoundLevel = calculateAggregateSoundLevel(loudspeakers,
+                                                     loudspeakerCount, origin); */
+  printStage1(loudspeakerCount, loudspeakers);
 
 
   return 0;
 }
 
-void printStage1(int numLoudspeaker, double Lsum) {
+/*
+void printStage2(point observationPoints[], point loudspeakers[]) {
+  int i, j;
+
+}
+*/
+
+void printStage1(int numLoudspeaker, loudspeaker loudspeakers[]) {
+  double aggregateSoundLevelAtOrigin;
+  aggregateSoundLevelAtOrigin = calculateAggregateSoundLevel(loudspeakers,
+                                                     numLoudspeaker, origin);
   printf("Stage1\n");
   printf("==========\n");
   printf("Number of loudspeakers: %02d\n", numLoudspeaker);
-  printf("Sound level at (000.0, 000.0): %5.2f dB\n", Lsum);
+  printf("Sound level at (000.0, 000.0): %5.2f dB\n", aggregateSoundLevelAtOrigin);
 }
 
-/* Calculate and return the aggregate soundLevel to selected point */
-double calculateAggregateSoundLevel(loudspeaker loudspeakers[], int numLoudspeaker) {
+/* Calculate and return the aggregate soundLevel at selected point */
+double calculateAggregateSoundLevel(loudspeaker loudspeakers[],
+                                    int numLoudspeaker, point selectedPoint) {
+
   double partialSum = 0.0;
   int i;
   double distanceToSelectedPoint, soundLevelAtSelectedPoint;
@@ -78,7 +100,7 @@ double calculateAggregateSoundLevel(loudspeaker loudspeakers[], int numLoudspeak
       continue;
     }
 
-    distanceToSelectedPoint = distanceBetween(origin, loudspeakers[i].pt);
+    distanceToSelectedPoint = distanceBetween(selectedPoint, loudspeakers[i].pt);
     soundLevelAtSelectedPoint = calculateSoundLevel(loudspeakers[i].soundLevel,
                                 DEFAULT_DISTANCE, distanceToSelectedPoint);
     partialSum += pow(10, (soundLevelAtSelectedPoint / 10));
@@ -87,10 +109,12 @@ double calculateAggregateSoundLevel(loudspeaker loudspeakers[], int numLoudspeak
   return 10 * log10(partialSum);
 }
 
+
 /* Calculate and return the distance(m) between point pt1 and point pt2 */
 double distanceBetween(point pt1, point pt2) {
   return sqrt(pow((pt1.x - pt2.x), 2) + pow((pt1.y - pt2.y), 2));
 }
+
 
 /* Calculate and return the soundlevel measured from distance r2 with respective
    to that from distance r1 */
