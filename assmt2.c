@@ -27,6 +27,7 @@ double calculateAggregateSoundLevel(loudspeaker loudspeakers[],
 void printStage1(int numLoudspeaker, loudspeaker loudspeakers[]);
 void printStage2(point observationPoints[], int numObservationPoints,
                  loudspeaker loudspeakers[], int numLoudspeakers);
+void printStage3(int numLoudspeakers, loudspeaker loudspeakers[]);
 double distanceBetween(point pt1, point pt2);
 double calculateSoundLevel(double L1, double r1, double r2);
 
@@ -36,11 +37,14 @@ double calculateSoundLevel(double L1, double r1, double r2);
 #define MAX_OBSERVATION_POINTS_NUMBER 98 /* From the specification, assume
                                             between 1 and 99 observation points
                                             will be specified */
-
 #define DEFAULT_DISTANCE 1  /* A distance of one metre(1m) from the source is
                                a frequently used default distance */
-
+#define SQUARE_REGION_SIDE_LENGTH 312 /* The side legnth of square region in
+                                         stage3 */
+#define THRESHOLD_SOUND_LEVEL 55 /* The threshold sound level used to check if
+                                    a sound level is to low */
 const point origin = {0.0 , 0.0}; /* The origin point */
+
 
 
 int main(int argc, char* argv[]) {
@@ -63,14 +67,33 @@ int main(int argc, char* argv[]) {
       observationPointsCount++;
     }
   }
-  /* aggregateSoundLevel = calculateAggregateSoundLevel(loudspeakers,
-                                                     loudspeakerCount, origin); */
+
   printStage1(loudspeakerCount, loudspeakers);
   printStage2(observationPoints, observationPointsCount,
               loudspeakers, loudspeakerCount);
-
+  printStage3(loudspeakerCount, loudspeakers);
 
   return 0;
+}
+
+
+void printStage3(int numLoudspeakers, loudspeaker loudspeakers[]) {
+  int x, y, numSampPts = 0, numTooLowPts = 0;
+  double currentSoundLvl;
+  for(x = 4; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+    for(y = 4; y < SQUARE_REGION_SIDE_LENGTH; y += 4) {
+      point currentPt = {x, y};
+      currentSoundLvl = calculateAggregateSoundLevel(loudspeakers, numLoudspeakers, currentPt);
+      numSampPts++;
+      if(currentSoundLvl <= THRESHOLD_SOUND_LEVEL) /*?? How to avoid using == for double comparison here? */
+        numTooLowPts++;
+    }
+  }
+  printf("Stage3\n");
+  printf("==========\n");
+  printf("%d points sampled\n", numSampPts);
+  printf("%d points (%005.2f%%) have sound level <= 55 dB", numTooLowPts,
+                                              (double)numTooLowPts/numSampPts * 100);
 }
 
 
@@ -91,20 +114,19 @@ void printStage2(point observationPoints[], int numObservationPoints,
                                         aggSoundLevelAtCurrentPoint);
   }
   printf("\n");
-
-
 }
 
 
 void printStage1(int numLoudspeakers, loudspeaker loudspeakers[]) {
-  double aggregateSoundLevelAtOrigin;
-  aggregateSoundLevelAtOrigin = calculateAggregateSoundLevel(loudspeakers,
+  double aggSoundLevelAtOrigin;
+  aggSoundLevelAtOrigin = calculateAggregateSoundLevel(loudspeakers,
                                                      numLoudspeakers, origin);
   printf("Stage1\n");
   printf("==========\n");
   printf("Number of loudspeakers: %02d\n", numLoudspeakers);
-  printf("Sound level at (%0005.1f, %0005.1f): %5.2f dB\n\n", origin.x, origin.y
-                                                , aggregateSoundLevelAtOrigin);
+  printf("Sound level at (%0005.1f, %0005.1f): %5.2f dB\n\n", origin.x,
+                                                              origin.y,
+                                                  aggSoundLevelAtOrigin);
 }
 
 /* Calculate and return the aggregate soundLevel at selected point */
