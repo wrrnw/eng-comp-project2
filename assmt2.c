@@ -84,9 +84,8 @@ void printStage4(int numLoudspeakers, loudspeaker loudspeakers[]) {
   double currentSoundLvl;
   printf("Stage4\n");
   printf("==========\n");
-
-  for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
-    for(y = 308; y > 0; y -= 8) {
+  for(y = 308; y > 0; y -= 8){
+    for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
       point currentPt = {x ,y};
       currentSoundLvl = calculateAggregateSoundLevel(loudspeakers, numLoudspeakers, currentPt);
       if(currentSoundLvl >= 100)
