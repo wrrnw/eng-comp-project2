@@ -28,6 +28,7 @@ void printStage1(int numLoudspeaker, loudspeaker loudspeakers[]);
 void printStage2(point observationPoints[], int numObservationPoints,
                  loudspeaker loudspeakers[], int numLoudspeakers);
 void printStage3(int numLoudspeakers, loudspeaker loudspeakers[]);
+void printStage4(int numLoudspeakers, loudspeaker loudspeakers[]);
 double distanceBetween(point pt1, point pt2);
 double calculateSoundLevel(double L1, double r1, double r2);
 
@@ -72,8 +73,39 @@ int main(int argc, char* argv[]) {
   printStage2(observationPoints, observationPointsCount,
               loudspeakers, loudspeakerCount);
   printStage3(loudspeakerCount, loudspeakers);
+  printStage4(loudspeakerCount, loudspeakers);
 
   return 0;
+}
+
+
+void printStage4(int numLoudspeakers, loudspeaker loudspeakers[]) {
+  int x, y;
+  double currentSoundLvl;
+  printf("Stage4\n");
+  printf("==========\n");
+
+  for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+    for(y = 308; y > 0; y -= 8) {
+      point currentPt = {x ,y};
+      currentSoundLvl = calculateAggregateSoundLevel(loudspeakers, numLoudspeakers, currentPt);
+      if(currentSoundLvl >= 100)
+        printf("+");
+      else if(currentSoundLvl >= 90)
+        printf(" ");
+      else if(currentSoundLvl >= 80)
+        printf("8");
+      else if(currentSoundLvl >= 70)
+        printf(" ");
+      else if(currentSoundLvl >= 60)
+        printf("6");
+      else if(currentSoundLvl > 55)
+        printf(" ");
+      else
+        printf("-");
+    }
+    printf("\n");
+  }
 }
 
 
@@ -92,7 +124,7 @@ void printStage3(int numLoudspeakers, loudspeaker loudspeakers[]) {
   printf("Stage3\n");
   printf("==========\n");
   printf("%d points sampled\n", numSampPts);
-  printf("%d points (%005.2f%%) have sound level <= 55 dB", numTooLowPts,
+  printf("%d points (%005.2f%%) have sound level <= 55 dB\n\n", numTooLowPts,
                                               (double)numTooLowPts/numSampPts * 100);
 }
 
