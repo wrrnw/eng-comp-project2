@@ -3,9 +3,9 @@
 
 
 int main(int argc, char* argv[]) {
-  double p;
-  p = 3.0/1;
-  printf("p = %f\n", p);
+  int p;
+  p = 1;
+  printf("p = %04d\n", p);
 
 
   return 0;
