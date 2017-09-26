@@ -34,8 +34,11 @@ void printStage2(point_t observationPoints[], int numObservationPoints,
                  loudspeaker_t loudspeakers[], int numLoudspeakers);
 void printStage3(int numLoudspeakers, loudspeaker_t loudspeakers[]);
 void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]);
+void displayCharacter(double souldLvl);
 double distanceBetween(point_t pt1, point_t pt2);
 double calculateSoundLvl(double L1, double r1, double r2);
+int lineIntersect(line_t l1, line_t l2);
+void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLines[]);
 
 
 #define MAX_LOUDSPEAKERS_NUMBER 98 /* From the specification, assume between 1
@@ -53,6 +56,13 @@ double calculateSoundLvl(double L1, double r1, double r2);
                               boundary consists of between 3 and 99 vertives */
 const point_t origin = {0.0 , 0.0}; /* The origin point */
 
+#define TRUE 1
+#define FALSE 0
+#define EPS (1e-06)
+#define ABS(x) (fabs(x))
+#define MIN(a,b) (a<b ? a:b)
+#define MAX(a,b) (a>b ? a:b)
+
 
 
 int main(int argc, char* argv[]) {
@@ -60,9 +70,11 @@ int main(int argc, char* argv[]) {
   loudspeaker_t loudspeakers[MAX_LOUDSPEAKERS_NUMBER];
   point_t observationPts[MAX_OBSERVATION_POINTS_NUMBER];
   point_t vertices[MAX_VERTICES_NUMBER];
+  line_t boundaryLines[MAX_VERTICES_NUMBER];
 
   readData(loudspeakers, observationPts, vertices, &numLoudspeakers,
            &numObservationPts, &numVertices);
+  storeAllBoundryLines(numVertices, vertices, boundaryLines);
   printStage1(numLoudspeakers, loudspeakers);
   printStage2(observationPts, numObservationPts,
               loudspeakers, numLoudspeakers);
@@ -98,9 +110,43 @@ void readData(loudspeaker_t loudspeakers[], point_t observationPts[],
   }
 }
 
+void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLines[]) {
+  /* Note that the number of boundary line segments is the same as the number of
+     vertices */
+  int i, numBoundaryLines;
+  numBoundaryLines = numVertices;
+  for(i = 0; i < numBoundaryLines-1; i++) {
+    boundaryLines[i].p1 = vertices[i];
+    boundaryLines[i].p2 = vertices[i+1];
+  }
+  /* The last boundary line connect the last vertex and the first vertex */
+  i++;
+  boundaryLines[i].p1 = vertices[i];
+  boundaryLines[i].p2 = vertices[0];
+}
 
-void printStage5() {
 
+void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
+  int x, y;
+  double currentSoundLvl;
+  point_t currentPt;
+    line_t l1, l2;
+
+  printf("Stage 5\n");
+  printf("==========\n");
+  for(y = 308; y > 0; y -=8) {
+    for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+      currentPt = (point_t){.x = x, .y = y};
+      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
+
+        if(!lineIntersect(l1, l2)) {
+          displayCharacter(currentSoundLvl);
+        } else {
+          printf("#");
+        }
+    }
+    printf("\n");
+  }
 }
 
 
@@ -111,27 +157,32 @@ void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
 
   printf("Stage 4\n");
   printf("==========\n");
-  for(y = 308; y > 0; y -= 8){
+  for(y = 308; y > 0; y -= 8) {
     for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
       currentPt = (point_t){.x = x, .y = y};
       currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
-      if(currentSoundLvl >= 100)
-        printf("+");
-      else if(currentSoundLvl >= 90)
-        printf(" ");
-      else if(currentSoundLvl >= 80)
-        printf("8");
-      else if(currentSoundLvl >= 70)
-        printf(" ");
-      else if(currentSoundLvl >= 60)
-        printf("6");
-      else if(currentSoundLvl > 55)
-        printf(" ");
-      else
-        printf("-");
+      displayCharacter(currentSoundLvl);
     }
     printf("\n");
   }
+}
+
+
+void displayCharacter(double soundLvl) {
+  if(soundLvl >= 100)
+    printf("+");
+  else if(soundLvl >= 90)
+    printf(" ");
+  else if(soundLvl >= 80)
+    printf("8");
+  else if(soundLvl >= 70)
+    printf(" ");
+  else if(soundLvl >= 60)
+    printf("6");
+  else if(soundLvl > 55)
+    printf(" ");
+  else
+    printf("-");
 }
 
 
@@ -226,4 +277,69 @@ double distanceBetween(point_t pt1, point_t pt2) {
    to that from distance r1 */
 double calculateSoundLvl(double L1, double r1, double r2) {
   return L1 + 20 * log10(r1 / r2);
+}
+
+
+/* This function was adapted in 2012 from
+ * http://local.wasp.uwa.edu.au/~pbourke/geometry/lineline2d/pdb.c
+ * (no longer available at that URL in 2013)
+ * and was written in the first instance by Paul Bourke
+ *
+ * Modified for use in a different assignment previously by Alistair Moffat by:
+ *   . changing the argument type to two structs type line_t
+ *   . making sure result is TRUE if an endpoint is on the other line
+ * Modified for use by Jianzhong Qi by:
+ *   . testing whether the projections of the two line segments intersect first
+ *
+ * Check if two lines are intersect and return ture for intersect */
+int lineIntersect(line_t l1, line_t l2) {
+   double x1=l1.p1.x, y1=l1.p1.y,
+   	  x2=l1.p2.x, y2=l1.p2.y,
+   	  x3=l2.p1.x, y3=l2.p1.y,
+   	  x4=l2.p2.x, y4=l2.p2.y;
+   double mua,mub;
+   double denom,numera,numerb;
+
+   /* Take the projections of the two line segments */
+   double xMin1, xMax1, xMin2, xMax2, yMin1, yMax1, yMin2, yMax2;
+   xMin1 = MIN(x1, x2);
+   xMax1 = MAX(x1, x2);
+   xMin2 = MIN(x3, x4);
+   xMax2 = MAX(x3, x4);
+
+   yMin1 = MIN(y1, y2);
+   yMax1 = MAX(y1, y2);
+   yMin2 = MIN(y3, y4);
+   yMax2 = MAX(y3, y4);
+
+   /* Do the projects intersect? */
+   if((xMin2-xMax1) >= EPS || (xMin1-xMax2) >= EPS ||
+   	   (yMin2-yMax1) >= EPS || (yMin1-yMax2) >= EPS) {
+   	   return FALSE;
+   }
+
+   denom  = (y4-y3) * (x2-x1) - (x4-x3) * (y2-y1);
+   numera = (x4-x3) * (y1-y3) - (y4-y3) * (x1-x3);
+   numerb = (x2-x1) * (y1-y3) - (y2-y1) * (x1-x3);
+
+   /* Are the line coincident? */
+   if (ABS(numera) < EPS && ABS(numerb) < EPS && ABS(denom) < EPS) {
+      return(TRUE);
+   }
+
+   /* Are the line parallel */
+   if (ABS(denom) < EPS) {
+      return(FALSE);
+   }
+
+   /* Is the intersection along the the segments */
+   mua = numera / denom;
+   mub = numerb / denom;
+   /* AM - use equality here so that "on the end" is not an
+    * intersection; use strict inequality if "touching at end" is an
+    * intersection */
+   if (mua < 0 || mua > 1 || mub < 0 || mub > 1) {
+      return(FALSE);
+   }
+   return(TRUE);
 }
