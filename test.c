@@ -3,9 +3,8 @@
 
 
 int main(int argc, char* argv[]) {
-  int p;
-  p = 1;
-  printf("p = %04d\n", p);
+  int* p = 1;
+  printf("p = %04d\n", *p);
 
 
   return 0;
