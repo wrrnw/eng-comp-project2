@@ -293,6 +293,24 @@ double calculateSoundLvl(double L1, double r1, double r2) {
   return L1 + 20 * log10(r1 / r2);
 }
 
+/* Display the characters corresponds to the sound level */
+void displayCharacter(double soundLvl) {
+  if(soundLvl >= 100)
+    printf("+");
+  else if(soundLvl >= 90)
+    printf(" ");
+  else if(soundLvl >= 80)
+    printf("8");
+  else if(soundLvl >= 70)
+    printf(" ");
+  else if(soundLvl >= 60)
+    printf("6");
+  else if(soundLvl > 55)
+    printf(" ");
+  else
+    printf("-");
+}
+
 /* Find the centroid of a polygon using the vertices of the polygon */
 point_t findCentroid(int numVertices, point_t vertices[]) {
   point_t centroid;
