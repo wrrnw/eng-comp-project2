@@ -34,6 +34,8 @@ void printStage2(point_t observationPoints[], int numObservationPoints,
                  loudspeaker_t loudspeakers[], int numLoudspeakers);
 void printStage3(int numLoudspeakers, loudspeaker_t loudspeakers[]);
 void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]);
+void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[],
+                  int numVertices, point_t vertices[], line_t boundaryLines[]);
 void displayCharacter(double souldLvl);
 double distanceBetween(point_t pt1, point_t pt2);
 double calculateSoundLvl(double L1, double r1, double r2);
@@ -75,11 +77,12 @@ int main(int argc, char* argv[]) {
   readData(loudspeakers, observationPts, vertices, &numLoudspeakers,
            &numObservationPts, &numVertices);
   storeAllBoundryLines(numVertices, vertices, boundaryLines);
-  printStage1(numLoudspeakers, loudspeakers);
+  /*printStage1(numLoudspeakers, loudspeakers);
   printStage2(observationPts, numObservationPts,
               loudspeakers, numLoudspeakers);
   printStage3(numLoudspeakers, loudspeakers);
-  printStage4(numLoudspeakers, loudspeakers);
+  printStage4(numLoudspeakers, loudspeakers);*/
+  printStage5(numLoudspeakers, loudspeakers, numVertices, vertices, boundaryLines);
 
   return 0;
 }
@@ -118,32 +121,61 @@ void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLi
   for(i = 0; i < numBoundaryLines-1; i++) {
     boundaryLines[i].p1 = vertices[i];
     boundaryLines[i].p2 = vertices[i+1];
+    printf("vertices[%d].x = %f\n",i, vertices[i].x);
+    printf("vertices[%d].y = %f\n",i, vertices[i].y);
+    printf("vertices[%d].x = %f\n",i+1, vertices[i+1].x);
+    printf("vertices[%d].y = %f\n",i+1, vertices[i+1].y);
+    printf("boundaryLines[%d].p1.x = %f\n",i, boundaryLines[i].p1.x);
+    printf("boundaryLines[%d].p1.y = %f\n",i, boundaryLines[i].p1.y);
+    printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.x);
+    printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.y);
   }
   /* The last boundary line connect the last vertex and the first vertex */
-  i++;
   boundaryLines[i].p1 = vertices[i];
   boundaryLines[i].p2 = vertices[0];
+  printf("vertices[%d].x = %f\n",i, vertices[i].x);
+  printf("vertices[%d].y = %f\n",i, vertices[i].y);
+  printf("boundaryLines[%d].p1.x = %f\n",i, boundaryLines[i].p1.x);
+  printf("boundaryLines[%d].p1.y = %f\n",i, boundaryLines[i].p1.y);
+  printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.x);
+  printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.y);
 }
 
 
-void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
-  int x, y;
+void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[],
+                  int numVertices, point_t vertices[], line_t boundaryLines[]) {
+  int x, y, i, j;
   double currentSoundLvl;
+  int haveIntersected;
   point_t currentPt;
-    line_t l1, l2;
+  /* testLine is the line between current point and a vertex */
+  line_t testLine, currentBoundaryLine;
 
   printf("Stage 5\n");
   printf("==========\n");
   for(y = 308; y > 0; y -=8) {
     for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+      haveIntersected = FALSE;
       currentPt = (point_t){.x = x, .y = y};
+      testLine.p1 = currentPt;
       currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
-
-        if(!lineIntersect(l1, l2)) {
-          displayCharacter(currentSoundLvl);
-        } else {
-          printf("#");
+      for(i = 0; i < numVertices; i++) {
+        testLine.p2 = vertices[i];
+        for(j = 0; j < numVertices; j++) {
+          currentBoundaryLine = boundaryLines[j];
+          if(lineIntersect(testLine, currentBoundaryLine)) {
+            haveIntersected = TRUE;
+            /* Stop check current point inside polygon */
+            i = numVertices;
+            break;
+          }
         }
+      }
+      if(haveIntersected) {
+        printf("#");
+      } else {
+        displayCharacter(currentSoundLvl);
+      }
     }
     printf("\n");
   }
@@ -165,6 +197,7 @@ void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
     }
     printf("\n");
   }
+  printf("\n");
 }
 
 
