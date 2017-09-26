@@ -2,8 +2,6 @@
  * Written by Dongwei Wei(728580)
  * Programming is fun!
  */
-
-/*?? Is such long variable name a bad habit? */
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -27,21 +25,22 @@ typedef struct {
 void readData(loudspeaker_t loudspeakers[], point_t observationPts[],
               point_t vertices[], int* loudspeakerCount,
               int* observationPtsCount, int* verticesCount);
-double calculateAggSoundLvl(loudspeaker_t loudspeakers[],
-                                    int numLoudspeaker, point_t selectedPoint);
+void storeAllBoundryLines(int numVertices, point_t vertices[],
+                          line_t boundaryLines[]);
 void printStage1(int numLoudspeaker, loudspeaker_t loudspeakers[]);
 void printStage2(point_t observationPoints[], int numObservationPoints,
                  loudspeaker_t loudspeakers[], int numLoudspeakers);
 void printStage3(int numLoudspeakers, loudspeaker_t loudspeakers[]);
 void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]);
 void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[],
-                  int numVertices, point_t vertices[], line_t boundaryLines[]);
-void displayCharacter(double souldLvl);
+                 int numVertices, point_t vertices[], line_t boundaryLines[]);
+double calculateAggSoundLvl(loudspeaker_t loudspeakers[],
+                            int numLoudspeaker, point_t selectedPoint);
 double distanceBetween(point_t pt1, point_t pt2);
+void displayCharacter(double souldLvl);
 double calculateSoundLvl(double L1, double r1, double r2);
-int lineIntersect(line_t l1, line_t l2);
-void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLines[]);
 point_t findCentroid(int numVertices, point_t vertices[]);
+int lineIntersect(line_t l1, line_t l2);
 
 
 #define MAX_LOUDSPEAKERS_NUMBER 98 /* From the specification, assume between 1
@@ -57,18 +56,19 @@ point_t findCentroid(int numVertices, point_t vertices[]);
                                     a sound level is to low */
 #define MAX_VERTICES_NUMBER 98 /* From the specification, assume the region
                               boundary consists of between 3 and 99 vertives */
-#define TRUE 1
-#define FALSE 0
-#define EPS (1e-06)
-#define ABS(x) (fabs(x))
-#define MIN(a,b) (a<b ? a:b)
-#define MAX(a,b) (a>b ? a:b)
+#define TRUE 1 /* The value of truth */
+#define FALSE 0 /* The value of falsehood */
+#define EPS (1e-06) /* ??? */
+#define ABS(x) (fabs(x)) /* The absolute value of a double number x */
+#define MIN(a,b) (a<b ? a:b) /* The minimum value of a and b */
+#define MAX(a,b) (a>b ? a:b) /* The maximum value of a and b */
 const point_t origin = {0.0 , 0.0}; /* The origin point */
+                            /*?? Should we put const here? */
 
 
 
 
-
+/* The main function that generates the whole program */
 int main(int argc, char* argv[]) {
   int numLoudspeakers, numObservationPts, numVertices;
   loudspeaker_t loudspeakers[MAX_LOUDSPEAKERS_NUMBER];
@@ -84,12 +84,14 @@ int main(int argc, char* argv[]) {
               loudspeakers, numLoudspeakers);
   printStage3(numLoudspeakers, loudspeakers);
   printStage4(numLoudspeakers, loudspeakers);
-  printStage5(numLoudspeakers, loudspeakers, numVertices, vertices, boundaryLines);
+  printStage5(numLoudspeakers, loudspeakers, numVertices,
+              vertices, boundaryLines);
 
   return 0;
 }
 
 
+/* Read the data from standard output */
 void readData(loudspeaker_t loudspeakers[], point_t observationPts[],
               point_t vertices[], int* loudspeakerCount,
               int* observationPtsCount, int* verticesCount) {
@@ -109,28 +111,18 @@ void readData(loudspeaker_t loudspeakers[], point_t observationPts[],
                        &observationPts[*observationPtsCount].y);
       (*observationPtsCount)++;
     } else if(lineSpecifier == 'V') {
-      scanf("%lf %lf", &vertices[*verticesCount].x, &vertices[*verticesCount].y);
+      scanf("%lf %lf", &vertices[*verticesCount].x,
+                       &vertices[*verticesCount].y);
       (*verticesCount)++;
     }
   }
 }
 
-/* Find the centroid of a polygon using the vertices of the polygon */
-point_t findCentroid(int numVertices, point_t vertices[]) {
-  point_t centroid;
-  int i, xSum = 0.0, ySum = 0.0;
-  for(i = 0; i < numVertices; i++) {
-    xSum += vertices[i].x;
-    ySum += vertices[i].y;
-  }
-  centroid.x = xSum/numVertices;
-  centroid.y = ySum/numVertices;
-  return centroid;
-}
 
-void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLines[]) {
-  /* Note that the number of boundary line segments is the same as the number of
-     vertices */
+void storeAllBoundryLines(int numVertices, point_t vertices[],
+                          line_t boundaryLines[]) {
+  /* Note that the number of boundary line segments is the same as the number
+     of vertices */
   int i, numBoundaryLines;
   numBoundaryLines = numVertices;
   for(i = 0; i < numBoundaryLines-1; i++) {
@@ -143,102 +135,21 @@ void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLi
 }
 
 
-void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[],
-                  int numVertices, point_t vertices[], line_t boundaryLines[]) {
-  int x, y, i;
-  double currentSoundLvl;
-  int haveIntersected;
-  point_t currentPt, centroidOfPolygon;
-  /* testLine is the line between current point and a vertex */
-  line_t testLine, currentBoundaryLine;
-
-  printf("Stage 5\n");
+/* Calculate the aggregate sound level at origin and print stage 1 */
+void printStage1(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
+  double aggSoundLvlAtOrigin;
+  aggSoundLvlAtOrigin = calculateAggSoundLvl(loudspeakers,
+                                             numLoudspeakers, origin);
+  printf("Stage 1\n");
   printf("==========\n");
-  centroidOfPolygon = findCentroid(numVertices, vertices);
-  for(y = 308; y > 0; y -=8) {
-    for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
-      haveIntersected = FALSE;
-      currentPt = (point_t){.x = x, .y = y};
-      testLine.p1 = currentPt;
-      testLine.p2 = centroidOfPolygon;
-      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
-      for(i = 0; i < numVertices; i++) {
-        currentBoundaryLine = boundaryLines[i];
-        if(lineIntersect(testLine, currentBoundaryLine)) {
-          haveIntersected = TRUE;
-          break;
-        }
-      }
-      if(haveIntersected) {
-        printf("#");
-      } else {
-        displayCharacter(currentSoundLvl);
-      }
-    }
-    printf("\n");
-  }
+  printf("Number of loudspeakers: %02d\n", numLoudspeakers);
+  printf("Sound level at (%05.1f, %05.1f): %5.2f dB\n\n", origin.x,
+                                                          origin.y,
+                                                  aggSoundLvlAtOrigin);
 }
 
 
-void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
-  int x, y;
-  double currentSoundLvl;
-  point_t currentPt;
-
-  printf("Stage 4\n");
-  printf("==========\n");
-  for(y = 308; y > 0; y -= 8) {
-    for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
-      currentPt = (point_t){.x = x, .y = y};
-      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
-      displayCharacter(currentSoundLvl);
-    }
-    printf("\n");
-  }
-  printf("\n");
-}
-
-
-void displayCharacter(double soundLvl) {
-  if(soundLvl >= 100)
-    printf("+");
-  else if(soundLvl >= 90)
-    printf(" ");
-  else if(soundLvl >= 80)
-    printf("8");
-  else if(soundLvl >= 70)
-    printf(" ");
-  else if(soundLvl >= 60)
-    printf("6");
-  else if(soundLvl > 55)
-    printf(" ");
-  else
-    printf("-");
-}
-
-
-void printStage3(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
-  int x, y, numSampPts = 0, numTooLowPts = 0;
-  double currentSoundLvl;
-  point_t currentPt;
-
-  for(x = 4; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
-    for(y = 4; y < SQUARE_REGION_SIDE_LENGTH; y += 4) {
-      currentPt = (point_t){.x = x, .y = y};
-      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
-      numSampPts++;
-      if(currentSoundLvl <= THRESHOLD_SOUND_LEVEL) /*?? How to avoid using == for double comparison here? */
-        numTooLowPts++;
-    }
-  }
-  printf("Stage 3\n");
-  printf("==========\n");
-  printf("%d points sampled\n", numSampPts); /*?? Do we need to assume numSampts always be 4 digits?(use %04d specifier) */
-  printf("%04d points (%05.2f%%) have sound level <= 55 dB\n\n", numTooLowPts,
-                                        (double)numTooLowPts/numSampPts * 100);
-}
-
-
+/* print stage 2 */
 void printStage2(point_t observationPts[], int numObservationPts,
                  loudspeaker_t loudspeakers[], int numLoudspeakers) {
   double aggSoundLvlAtCurrentPt;
@@ -260,16 +171,88 @@ void printStage2(point_t observationPts[], int numObservationPts,
 }
 
 
-void printStage1(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
-  double aggSoundLvlAtOrigin;
-  aggSoundLvlAtOrigin = calculateAggSoundLvl(loudspeakers,
-                                             numLoudspeakers, origin);
-  printf("Stage 1\n");
+/* print stage 3 */
+void printStage3(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
+  int x, y, numSampPts = 0, numTooLowPts = 0;
+  double currentSoundLvl;
+  point_t currentPt;
+
+  for(x = 4; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+    for(y = 4; y < SQUARE_REGION_SIDE_LENGTH; y += 4) {
+      currentPt = (point_t){.x = x, .y = y};
+      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers,
+                                             currentPt);
+      numSampPts++;
+      if(currentSoundLvl <= THRESHOLD_SOUND_LEVEL) /*?? How to avoid using == for double comparison here? */
+        numTooLowPts++;
+    }
+  }
+  printf("Stage 3\n");
   printf("==========\n");
-  printf("Number of loudspeakers: %02d\n", numLoudspeakers);
-  printf("Sound level at (%05.1f, %05.1f): %5.2f dB\n\n", origin.x,
-                                                          origin.y,
-                                                  aggSoundLvlAtOrigin);
+  printf("%d points sampled\n", numSampPts); /*?? Do we need to assume numSampts always be 4 digits?(use %04d specifier) */
+  printf("%04d points (%05.2f%%) have sound level <= 55 dB\n\n", numTooLowPts,
+                                       (double)numTooLowPts/numSampPts * 100);
+}
+
+
+/* print stage 4 */
+void printStage4(int numLoudspeakers, loudspeaker_t loudspeakers[]) {
+  int x, y;
+  double currentSoundLvl;
+  point_t currentPt;
+
+  printf("Stage 4\n");
+  printf("==========\n");
+  for(y = 308; y > 0; y -= 8) {
+    for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+      currentPt = (point_t){.x = x, .y = y};
+      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers,
+                                             currentPt);
+      displayCharacter(currentSoundLvl);
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+
+
+/* print stage 5 */
+void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[],
+                 int numVertices, point_t vertices[], line_t boundaryLines[]) {
+  int x, y, i;
+  double currentSoundLvl;
+  int haveIntersected;
+  point_t currentPt, centroidOfPolygon;
+  line_t testLine, currentBoundaryLine;
+
+  printf("Stage 5\n");
+  printf("==========\n");
+  centroidOfPolygon = findCentroid(numVertices, vertices);
+  for(y = 308; y > 0; y -=8) {
+    for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
+      haveIntersected = FALSE;
+      currentPt = (point_t){.x = x, .y = y};
+      /* testLine represents the line between current point and centroid
+         of the polygon */
+      testLine.p1 = currentPt;
+      testLine.p2 = centroidOfPolygon;
+      currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers,
+                                             currentPt);
+      for(i = 0; i < numVertices; i++) {
+        currentBoundaryLine = boundaryLines[i];
+        if(lineIntersect(testLine, currentBoundaryLine)) {
+          haveIntersected = TRUE;
+          break;
+        }
+      }
+      if(haveIntersected) {
+        printf("#");
+      } else {
+        displayCharacter(currentSoundLvl);
+      }
+    }
+    printf("\n");
+  }
 }
 
 
@@ -310,6 +293,18 @@ double calculateSoundLvl(double L1, double r1, double r2) {
   return L1 + 20 * log10(r1 / r2);
 }
 
+/* Find the centroid of a polygon using the vertices of the polygon */
+point_t findCentroid(int numVertices, point_t vertices[]) {
+  point_t centroid;
+  int i, xSum = 0.0, ySum = 0.0;
+  for(i = 0; i < numVertices; i++) {
+    xSum += vertices[i].x;
+    ySum += vertices[i].y;
+  }
+  centroid.x = xSum/numVertices;
+  centroid.y = ySum/numVertices;
+  return centroid;
+}
 
 /* This function was adapted in 2012 from
  * http://local.wasp.uwa.edu.au/~pbourke/geometry/lineline2d/pdb.c
