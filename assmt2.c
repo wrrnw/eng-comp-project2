@@ -41,6 +41,7 @@ double distanceBetween(point_t pt1, point_t pt2);
 double calculateSoundLvl(double L1, double r1, double r2);
 int lineIntersect(line_t l1, line_t l2);
 void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLines[]);
+point_t findCentroid(int numVertices, point_t vertices[]);
 
 
 #define MAX_LOUDSPEAKERS_NUMBER 98 /* From the specification, assume between 1
@@ -56,14 +57,15 @@ void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLi
                                     a sound level is to low */
 #define MAX_VERTICES_NUMBER 98 /* From the specification, assume the region
                               boundary consists of between 3 and 99 vertives */
-const point_t origin = {0.0 , 0.0}; /* The origin point */
-
 #define TRUE 1
 #define FALSE 0
 #define EPS (1e-06)
 #define ABS(x) (fabs(x))
 #define MIN(a,b) (a<b ? a:b)
 #define MAX(a,b) (a>b ? a:b)
+const point_t origin = {0.0 , 0.0}; /* The origin point */
+
+
 
 
 
@@ -77,11 +79,11 @@ int main(int argc, char* argv[]) {
   readData(loudspeakers, observationPts, vertices, &numLoudspeakers,
            &numObservationPts, &numVertices);
   storeAllBoundryLines(numVertices, vertices, boundaryLines);
-  /*printStage1(numLoudspeakers, loudspeakers);
+  printStage1(numLoudspeakers, loudspeakers);
   printStage2(observationPts, numObservationPts,
               loudspeakers, numLoudspeakers);
   printStage3(numLoudspeakers, loudspeakers);
-  printStage4(numLoudspeakers, loudspeakers);*/
+  printStage4(numLoudspeakers, loudspeakers);
   printStage5(numLoudspeakers, loudspeakers, numVertices, vertices, boundaryLines);
 
   return 0;
@@ -113,6 +115,19 @@ void readData(loudspeaker_t loudspeakers[], point_t observationPts[],
   }
 }
 
+/* Find the centroid of a polygon using the vertices of the polygon */
+point_t findCentroid(int numVertices, point_t vertices[]) {
+  point_t centroid;
+  int i, xSum = 0.0, ySum = 0.0;
+  for(i = 0; i < numVertices; i++) {
+    xSum += vertices[i].x;
+    ySum += vertices[i].y;
+  }
+  centroid.x = xSum/numVertices;
+  centroid.y = ySum/numVertices;
+  return centroid;
+}
+
 void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLines[]) {
   /* Note that the number of boundary line segments is the same as the number of
      vertices */
@@ -121,54 +136,37 @@ void storeAllBoundryLines(int numVertices, point_t vertices[], line_t boundaryLi
   for(i = 0; i < numBoundaryLines-1; i++) {
     boundaryLines[i].p1 = vertices[i];
     boundaryLines[i].p2 = vertices[i+1];
-    printf("vertices[%d].x = %f\n",i, vertices[i].x);
-    printf("vertices[%d].y = %f\n",i, vertices[i].y);
-    printf("vertices[%d].x = %f\n",i+1, vertices[i+1].x);
-    printf("vertices[%d].y = %f\n",i+1, vertices[i+1].y);
-    printf("boundaryLines[%d].p1.x = %f\n",i, boundaryLines[i].p1.x);
-    printf("boundaryLines[%d].p1.y = %f\n",i, boundaryLines[i].p1.y);
-    printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.x);
-    printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.y);
   }
   /* The last boundary line connect the last vertex and the first vertex */
   boundaryLines[i].p1 = vertices[i];
   boundaryLines[i].p2 = vertices[0];
-  printf("vertices[%d].x = %f\n",i, vertices[i].x);
-  printf("vertices[%d].y = %f\n",i, vertices[i].y);
-  printf("boundaryLines[%d].p1.x = %f\n",i, boundaryLines[i].p1.x);
-  printf("boundaryLines[%d].p1.y = %f\n",i, boundaryLines[i].p1.y);
-  printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.x);
-  printf("boundaryLines[%d].p2.x = %f\n",i, boundaryLines[i].p2.y);
 }
 
 
 void printStage5(int numLoudspeakers, loudspeaker_t loudspeakers[],
                   int numVertices, point_t vertices[], line_t boundaryLines[]) {
-  int x, y, i, j;
+  int x, y, i;
   double currentSoundLvl;
   int haveIntersected;
-  point_t currentPt;
+  point_t currentPt, centroidOfPolygon;
   /* testLine is the line between current point and a vertex */
   line_t testLine, currentBoundaryLine;
 
   printf("Stage 5\n");
   printf("==========\n");
+  centroidOfPolygon = findCentroid(numVertices, vertices);
   for(y = 308; y > 0; y -=8) {
     for(x = 2; x < SQUARE_REGION_SIDE_LENGTH; x += 4) {
       haveIntersected = FALSE;
       currentPt = (point_t){.x = x, .y = y};
       testLine.p1 = currentPt;
+      testLine.p2 = centroidOfPolygon;
       currentSoundLvl = calculateAggSoundLvl(loudspeakers, numLoudspeakers, currentPt);
       for(i = 0; i < numVertices; i++) {
-        testLine.p2 = vertices[i];
-        for(j = 0; j < numVertices; j++) {
-          currentBoundaryLine = boundaryLines[j];
-          if(lineIntersect(testLine, currentBoundaryLine)) {
-            haveIntersected = TRUE;
-            /* Stop check current point inside polygon */
-            i = numVertices;
-            break;
-          }
+        currentBoundaryLine = boundaryLines[i];
+        if(lineIntersect(testLine, currentBoundaryLine)) {
+          haveIntersected = TRUE;
+          break;
         }
       }
       if(haveIntersected) {
