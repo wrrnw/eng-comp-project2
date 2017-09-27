@@ -119,6 +119,7 @@ void readData(loudspeaker_t loudspeakers[], point_t observationPts[],
 }
 
 
+/* Store all boundary lines of a polygon connected by vertices */
 void storeAllBoundryLines(int numVertices, point_t vertices[],
                           line_t boundaryLines[]) {
   /* Note that the number of boundary line segments is the same as the number
@@ -267,7 +268,7 @@ double calculateAggSoundLvl(loudspeaker_t loudspeakers[],
   for(i = 0; i < numLoudspeakers; i++) {
     /* If Li = 0 then it should not be added into Equation 2, additionally,
        try not use '==' for double comparison */
-    if(abs(loudspeakers[i].soundLevel - 0.0) < 0.00000001) { /*?? Do we need to define this magic number? how? */
+    if(abs(loudspeakers[i].soundLevel - 0.0) < EPS) { /*?? Do we need to define this magic number? how? */
       continue;
     }
 
